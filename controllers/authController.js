@@ -71,7 +71,7 @@ exports.login = async (req, res) => {
 
     const { accessToken } = sendTokens(res, user._id);
 
-    res.status(201).json({ token: accessToken });
+    res.status(200).json({ token: accessToken });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
