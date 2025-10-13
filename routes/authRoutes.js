@@ -1,5 +1,11 @@
 const express = require("express");
-const { register, login } = require("../controllers/authController");
+const {
+  register,
+  login,
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../controllers/authController");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 
@@ -14,16 +20,24 @@ router.post("/refresh", (req, res) => {
 
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const newAccessToken = jwt.sign(
-      { id: decoded.id },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(decoded.id);
+    const newRefreshToken = generateRefreshToken(decoded.id);
+
+    // Set new refresh cookie
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res.json({ token: newAccessToken });
   } catch (err) {
     return res
       .status(403)
-      .json({ message: "Invalid or expired refresh token" });
+      .json({ message: "Invalid or expired refresh token" + err });
   }
 });
 
